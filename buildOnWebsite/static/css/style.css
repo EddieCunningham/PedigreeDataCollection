@@ -1,0 +1,131 @@
+div {
+	font-size: 10px;
+	border: 2px solid blue;
+}
+
+#panel {
+	position: absolute;
+	height: 70vh;
+	width: 100%;
+	top: 0;
+	left: 0;
+
+	border: 2px solid red;
+}
+
+#personInfo {
+	position: absolute;
+	height: 25%;
+	width: 99.5%;
+	bottom: 0;
+	left: 0;
+	border: 2px solid green;
+
+	display: -webkit-flex;
+    display: flex;
+    -webkit-justify-content: center;
+    justify-content: center;
+}
+
+input[type=text][class="inTable"] {
+	width: 95%;
+}
+
+input {
+	font-size: 10px;
+}
+
+
+#helpScreen {
+	width: 100px;
+}
+
+
+#textInputWrapper {
+	width: 275px;
+}
+
+#checkboxesWrapper {
+	width: 275px;
+}
+
+
+
+
+
+
+
+/*
+
+{"obj":[{
+"shapeName":"square",
+"custom":"false",
+"isSelected":"true",
+"isSelectedForFamily":"",
+"rightHyperEdges":"",
+"leftHyperEdges":"",
+"topHyperEdges":"",
+"bottomHyperEdges":"",
+"Id":"1",
+"adoptionBrackets":"",
+"noChildrenGraphic":"",
+"infertileGraphic":"",
+"deadLine":"",
+"stillBirthLine":"",
+"unknownFamilyHistoryGraphic":"",
+"probandGraphic":"",
+"carrierGraphic":"",
+"pregnantGraphic":"",
+"surrogateGraphic":"",
+"donorGraphic":"","parents":"","adoptiveParents":"",
+"mateKids":"",
+"diagnosis":"",
+"ageAtVisit":"",
+"otherInfo":"",
+"numbPersons":"",
+"numbPersonsDisplay":"",
+"divorcedList":"",
+"consanguinityList":"",
+"zygoticNumber":"0",
+"zygoticList":"",
+"zygoticType":"",
+"noChildrenList":"",
+"infertileList":"",
+"dead":"false",
+"ageOfDeath":"",
+"stillBirth":"false",
+"ageOfStillBirth":"",
+"prematureDeath":"false",
+"typeOfPrematureDeath":"",
+"unknownFamilyHistory":"false",
+"proband":"false",
+"consultand":"false",
+"carrier":"false",
+"pregnant":"false",
+"surrogate":"false",
+"donor":"false",
+"personText":"[object Object]"}]}
+
+
+
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

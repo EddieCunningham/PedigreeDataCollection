@@ -1,0 +1,545 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:svg="http://www.w3.org/2000/svg"
+      xmlns:vml="urn:schemas-microsoft-com:vml">
+    <head>
+        <script type="text/javascript" src="../static/js/jquery.js"></script>
+
+
+        <link rel="stylesheet" type="text/css" href="../static/css/style.css" media="screen"/>
+        <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+        <title>JSGL empty page template</title>
+        <meta http-equiv="X-UA-Compatible" content="IE=7" />
+        <!--[if vml]><style>vml\:* {behavior: url(#default#VML);}</style><![endif]-->
+        <script type="text/javascript" src="../static/js/jsgl.js"></script>
+        <script type="text/javascript" src="../static/js/myPerson.js"></script>
+        <script type="text/javascript" src="../static/js/myHyperEdge.js"></script>
+        <script type="text/javascript" src="../static/js/personText.js"></script>
+
+    </head>
+    <body>
+
+        <div id="panel">
+            <script type="text/javascript" src="../static/js/graphics.js"></script>
+            <script type="text/javascript" src="../static/js/customShapes.js"></script>
+        </div>
+
+        <script>
+            window.lockPanel = false;
+            $(document.body).on("mouseleave", "#panel",
+                function() {
+                    window.lockPanel = true;
+                }
+            );
+            $(document.body).on("mouseleave", "#personInfo",
+                function() {
+                    window.lockPanel = false;
+                }
+            );
+            $(document.body).on("mouseover", "#panel",
+                function() {
+                    window.lockPanel = false;
+                }
+            );
+            $(document.body).on("mouseover", "#personInfo",
+                function() {
+                    window.lockPanel = true;
+                }
+            );
+
+        </script>
+
+
+        <div id="personInfo">
+
+            <div id="legendWrapper">
+                <p style="margin:0;" id="currentSelection">Nothing selected</p>
+                <p style="margin:0;" id="extraInfo"></p>
+                <p style="margin:0;font-size:150%;">Legend</p>
+
+             
+            </div>
+
+            <div id="globalAttributes">
+                Pedigree ID: <input type="text" id="pedigreeID" style="width:75px"/><br>
+                Ethnicities: <input type="text" id="ethnicity1" style="width:75px"/><input type="text" id="ethnicity2" style="width:75px"/><br>
+                <!-- this stays the same for everyone -->
+                Inheritance Pattern: <select id="inheritancePattern"><option value="AD">AD</option><option value="AR">AR</option><option value="XL">XL</option><option value="M">M</option></select><br>
+                Other: <input type="text" id="otherPedigreeInfo" style="width:90%"/>
+                <br><br>
+                Parents: <input type="text" id="parents" style="width:40px" readonly>
+                Adoptive Parents: <input type="text" id="adoptiveParents" style="width:20px" readonly>
+                Children: <input type="text" id="children" style="width:100px" readonly>
+                ID: <input type="text" id="Id" style="width:20px" readonly>
+                <br>
+
+                Size: <input type="number" id="sizeValue" value="50" step="1">
+                <script>
+                    $(document.body).on("change","#sizeValue",
+                        function() {
+                            resizePedigree(parseInt($("#sizeValue").val()));
+                        }
+                    );
+                </script>
+
+                <br>
+
+                <input type="button" id="saveButton" value="Save">
+                <script>
+                    $("#saveButton").click(
+                        function() {
+                            sendToApp();
+                        }
+                    );
+                </script>
+
+
+            </div>
+
+
+
+            <div id="tableWrapper">
+                <table id="diagnosisTable">
+                    <tr>
+                        <td style="font-weight: bold">Diagnosis</td>
+                        <td style="font-weight: bold">Age of Diagnosis</td>      
+                        <td style="font-weight: bold">Age of Onset</td>
+                    </tr>
+                </table>
+                <select id="existingDiagnosis"><option value=""></option></select>
+                <button class="addNewDiagnosis">Add new</button>
+                <button class="removeDiagnosisRow">Remove</button>
+                <script>
+
+                    
+
+                    window.diagnosisList = [];
+
+                    function updateDiagnosisList(addRemove, value) {
+                        if(addRemove === "remove") {
+                            if(window.diagnosisList[value] === 1) {
+                                delete window.diagnosisList[value];
+                                $("#existingDiagnosis option[value='"+value+"']").remove();
+                                updateLegend("pop", value);
+                            }
+                            else {
+                                window.diagnosisList[value] -= 1;
+                            }
+                        }
+                        else {
+                            if(value in window.diagnosisList) {
+                                window.diagnosisList[value] += 1;
+                            }
+                            else {
+                                window.diagnosisList[value] = 1;
+                                $("#existingDiagnosis").append("<option value='"+value+"''>"+value+"</option>");
+                                updateLegend("push", value);
+                            }
+                        }
+                        updatePeopleColors();
+                    }
+
+                    // will look for change in text from when we focus to when we blur
+                    window.textOnFocusDiagnosis = "";
+                    window.focusOrBlur = "focus";
+                    $(document.body).on("focus",".inTable.diagnosis",
+                        function() {
+                            if(window.focusOrBlur === "focus") {
+                                window.textOnFocusDiagnosis = this.value; 
+                                window.focusOrBlur = "blur"; 
+                            }
+                        }
+                    );
+                    // update the diagnosisList when we finish typing
+                    $(document.body).on("blur",".inTable.diagnosis",
+                        function() {
+                            if(this.value !== window.textOnFocusDiagnosis && window.focusOrBlur === "blur") {
+                                if(window.currentlySelected != null) {
+                                    window.currentlySelected.updateDiagnosis();
+                                }
+                                if(window.textOnFocusDiagnosis !== "") {
+                                    updateDiagnosisList("remove", window.textOnFocusDiagnosis);
+                                }
+                                if(this.value !== "") {
+                                    updateDiagnosisList("add", this.value);
+                                }
+                                window.textOnFocusDiagnosis = "";
+                                window.focusOrBlur = "focus";
+                            }
+                        }
+                    );
+
+                    window.textOnFocusAgeOfDiagnosis = "";
+                    $(document.body).on("focus",".inTable.ageOfDiagnosis",
+                        function() {
+                            window.textOnFocusAgeOfDiagnosis = this.value;  
+                        }
+                    );
+                    $(document.body).on("blur",".inTable.ageOfDiagnosis",
+                        function() {
+                            if(this.value !== window.textOnFocusAgeOfDiagnosis) {
+                                if(window.currentlySelected != "") {
+                                    window.currentlySelected.updateDiagnosis();
+                                }
+                            }
+                        }
+                    );
+
+                    window.textOnFocusAgeOfOnset = "";
+                    $(document.body).on("focus",".inTable.ageOfOnset",
+                        function() {
+                            window.textOnFocusAgeOfOnset = this.value;  
+                        }
+                    );
+                    $(document.body).on("blur",".inTable.ageOfOnset",
+                        function() {
+                            if(this.value !== window.textOnFocusAgeOfOnset) {
+                                if(window.currentlySelected != "") {
+                                    window.currentlySelected.updateDiagnosis();
+                                }
+                            }
+                        }
+                    );
+
+
+                    // when we click on a new option, fill in a new row
+                    $(document.body).on("change","#existingDiagnosis",
+                        function() {
+                            $("#diagnosisTable").append("<tr><td><input type=text class='inTable diagnosis' value='"+this.value+"'></td><td><input type=text class='inTable ageOfDiagnosis'></td><td><input type=text class='inTable ageOfOnset'></td></tr>");
+                            if(window.currentlySelected != null) {
+                                window.currentlySelected.updateDiagnosis();
+                            }
+                            updateDiagnosisList("add", this.value);
+                        }
+                    )
+
+                    // add a new row to the diagnosis table
+                    $(document.body).on("click",".addNewDiagnosis",
+                        function() {
+                            if($('#diagnosisTable tr').length < 5) {
+                                $("#diagnosisTable").append("<tr><td><input type=text class='inTable diagnosis'></td><td><input type=text class='inTable ageOfDiagnosis'></td><td><input type=text class='inTable ageOfOnset'></td></tr>");
+                            }
+                        }
+                    );
+                    // remove a row in the diagnosis table
+                    $(document.body).on("click",".removeDiagnosisRow",
+                        function() {
+                            if($('#diagnosisTable tr').length > 1) {
+                                var valToDelete = $("#diagnosisTable tr:last td:first").find("input").val();
+                                $("#diagnosisTable tr:last").remove();
+                                if(window.currentlySelected != null) {
+                                    window.currentlySelected.updateDiagnosis();
+                                }
+                                updateDiagnosisList("remove", valToDelete);
+                            }
+                        }
+                    );
+           
+                </script>
+            </div>
+
+            <div id="textInputWrapper">
+                Age: <input type="text" id="ageAtVisit"/><br>
+                <script> 
+                    $(document.body).on("change","#ageAtVisit",
+                        function () {
+                            if(window.currentlySelected != null) {
+                                window.currentlySelected.updateAgeAtVisit();
+                            }
+                        }
+                    );
+                </script>
+
+                Other Info: <input type="text" id="otherInfo"/><br>
+                <script> 
+                    $(document.body).on("change","#otherInfo",
+                        function () {
+                            if(window.currentlySelected != null) {
+                                window.currentlySelected.updateOtherInfo();
+                            }
+                        }
+                    );
+                    $(document.body).on("blur","#otherInfo",
+                        function () {
+                            if(window.currentlySelected != null) {
+                                window.currentlySelected.updateOtherInfo();
+                            }
+                        }
+                    );
+                </script>
+
+                Number of Persons: <input type="text" id="numbPersons" style="width:10px"/><br>
+                <script> 
+                    $(document.body).on("change","#numbPersons",
+                        function () {
+                            if(window.currentlySelected != null) {
+                                window.currentlySelected.updateNumbPersons();
+                            }
+                        }
+                    );
+                    $(document.body).on("blur","#otherInfo",
+                        function () {
+                            if(window.currentlySelected != null) {
+                                window.currentlySelected.updateNumbPersons();
+                            }
+                        }
+                    );
+                </script>
+
+                
+            </div>
+            
+            <div id="checkboxesWrapper">
+
+                <div id="divorcedWrapper">
+                    Divorced
+                    <script>
+                        $(document.body).on("change",".divorced",
+                            function(){
+                                if(window.currentlySelected!=null) {
+                                    window.currentlySelected.updateDivorced();
+                                }
+                            }
+                        );
+                    </script>
+                </div>
+
+                <div id="consanguinityWrapper">
+                    Consanguinity
+                    <script>
+                        $(document.body).on("change",".consanguinity",
+                            function() {
+                                if(window.currentlySelected != null) {
+                                    window.currentlySelected.updateConsanguinity();
+                                }
+                            }
+                        );
+                    </script>
+                </div>
+
+                <div id="zygoticWrapper">
+                    Dizygotic/Monozygotic
+                    <script>
+                        $(document.body).on("change",".zygotic",
+                            function() {
+                                if(window.currentlySelected != null) {
+                                    window.currentlySelected.updateZygotic();
+                                }
+                            }
+                        );
+
+                        $(document.body).on("change","#typeOfZygotic",
+                            function() {
+                                if(window.currentlySelected != null) {
+                                    window.currentlySelected.updateZygotic();
+                                }
+                            }
+                        );
+
+                    </script>
+                </div>
+
+                <div id="adoptedWrapper">
+                    Adopted
+                    <script>
+                        $(document.body).on("change",".adopted",
+                            function() {
+                                if(window.currentlySelected != null) {
+                                    window.currentlySelected.updateAdoption();
+                                    //window.currentlySelected.updateParents();
+                                }
+                            }
+                        );
+                    </script>
+                </div>
+
+                <div id="noChildrenWrapper"> 
+                    No children
+                    <script>
+                        $(document.body).on("change",".noChildren",
+                            function() {
+                                if(window.currentlySelected != null) {
+                                    window.currentlySelected.updateNoChildren();
+                                }
+                            }
+                        );
+                    </script>
+                </div>
+
+                <div id="infertileWrapper">
+                    Infertile
+                    <script>
+                        $(document.body).on("change",".infertile",
+                            function() {
+                                if(window.currentlySelected != null) {
+                                    window.currentlySelected.updateInfertile();
+                                }
+                            }
+                        );
+                    </script>
+                </div>
+                
+
+                Dead <input type="checkbox" id="dead"> <!-- if checked, age of death field pops up -->
+                <script>
+                    $(document.body).on("change","#dead",
+                        function() {
+                            if(window.currentlySelected != null) {
+                                window.currentlySelected.updateDead();
+                            }
+                        }
+                    );
+
+                    $(document.body).on("change","#ageOfDeath",
+                        function() {
+                            if(window.currentlySelected != null) {
+                                window.currentlySelected.updateDead();
+                            }
+                        }
+                    );
+                    $(document.body).on("blur","#ageOfDeath",
+                        function() {
+                            if(window.currentlySelected != null) {
+                                window.currentlySelected.updateDead();
+                            }
+                        }
+                    );
+                </script>
+
+
+                Still Birth <input type="checkbox" id="stillBirth"> <!-- if checked, age of death field pops up -->
+                <script>
+                    $(document.body).on("change","#stillBirth",
+                        function() {
+                            if(window.currentlySelected != null) {
+                                window.currentlySelected.updateStillBirth();
+                            }
+                        }
+                    );
+
+                    $(document.body).on("change","#ageOfStillBirth",
+                        function() {
+                            if(window.currentlySelected != null) {
+                                window.currentlySelected.updateStillBirth();
+                            }
+                        }
+                    );
+                    $(document.body).on("blur","#ageOfStillBirth",
+                        function() {
+                            if(window.currentlySelected != null) {
+                                window.currentlySelected.updateStillBirth();
+                            }
+                        }
+                    );
+                </script>
+
+
+                Abortion/Miscarriage <input type="checkbox" id="prematureDeath"> <!-- if checked, type of death field pops up -->
+                <script>
+                    $(document.body).on("change","#prematureDeath",
+                        function() {
+                            if(window.currentlySelected != null) {
+                                window.currentlySelected.updatePrematureDeath();
+                            }
+                        }
+                    );
+
+                    $(document.body).on("change","#typeOfPrematureDeath",
+                        function() {
+                            if(window.currentlySelected != null) {
+                                window.currentlySelected.updatePrematureDeath();
+                            }
+                        }
+                    );
+                </script>
+
+
+                Unknown Family History <input type="checkbox" id="unknownFamilyHistory">
+                <script>
+                    $(document.body).on("change","#unknownFamilyHistory",
+                        function() {
+                            if(window.currentlySelected != null) {
+                                window.currentlySelected.updateUnknownFamilyHistory();
+                            }
+                        }
+                    );
+                </script>
+
+
+                Proband <input type="checkbox" id="proband">
+                <script>
+                    $(document.body).on("change","#proband",
+                        function() {
+                            if(window.currentlySelected != null) {
+                                window.currentlySelected.updateProband();
+                            }
+                        }
+                    );
+                </script>
+
+                Consultand <input type="checkbox" id="consultand">
+                <script>
+                    $(document.body).on("change","#consultand",
+                        function() {
+                            if(window.currentlySelected != null) {
+                                window.currentlySelected.updateConsultand();
+                            }
+                        }
+                    );
+                </script>
+
+
+                Carrier <input type="checkbox" id="carrier">
+                <script>
+                    $(document.body).on("change","#carrier",
+                        function() {
+                            if(window.currentlySelected != null) {
+                                window.currentlySelected.updateCarrier();
+                            }
+                        }
+                    );
+                </script>
+
+
+                Pregnancy <input type="checkbox" id="pregnant">
+                <script>
+                    $(document.body).on("change","#pregnant",
+                        function() {
+                            if(window.currentlySelected != null) {
+                                window.currentlySelected.updatePregnant();
+                            }
+                        }
+                    );
+                </script>
+
+
+                
+
+                Surrogate <input type="checkbox" id="surrogate">
+                <script>
+                    $(document.body).on("change","#surrogate",
+                        function() {
+                            if(window.currentlySelected != null) {
+                                window.currentlySelected.updateSurrogate();
+                            }
+                        }
+                    );
+                </script>
+                Donor <input type="checkbox" id="donor">
+                <script>
+                    $(document.body).on("change","#donor",
+                        function() {
+                            if(window.currentlySelected != null) {
+                                window.currentlySelected.updateDonor();
+                            }
+                        }
+                    );
+                </script>
+
+
+
+            </div>
+        </div>
+    </body>
+</html>
